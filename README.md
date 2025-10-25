@@ -2,8 +2,6 @@
 
 Finetune Sesame AI's CSM-1B model for custom voices using **full finetuning** or **LoRA** (parameter-efficient).
 
-Based on [knottwill/sesame-finetune](https://github.com/knottwill/sesame-finetune) with added LoRA support and data preparation utilities.
-
 ## Features
 
 - **Full Finetuning**: Modify original weights for significant domain shifts (new languages)
