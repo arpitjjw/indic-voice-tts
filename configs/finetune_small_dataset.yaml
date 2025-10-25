@@ -1,0 +1,8 @@
+batch_size: 4              # Smaller batch for 500 samples
+grad_acc_steps: 2          # Effective batch = 8
+learning_rate: 0.00001     # Lower LR to prevent overfitting
+max_grad_norm: 1.0         # Conservative gradient clipping
+warmup_steps: 50           # Quick warmup for small dataset
+weight_decay: 0.001        # Slightly less regularization
+lr_decay: cosine           # Cosine decay works better for small datasets
+decoder_loss_weight: 0.5   # Balance text/audio loss

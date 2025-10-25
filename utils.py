@@ -182,7 +182,12 @@ def load_model(
         model = Model(config)
 
         if model_name_or_checkpoint_path:
-            state_dict = torch.load(model_name_or_checkpoint_path)['model']
+            checkpoint = torch.load(model_name_or_checkpoint_path, weights_only=False)
+            state_dict = checkpoint['model']
+            # Remove unexpected keys that may be present in the checkpoint
+            keys_to_remove = ['backbone_causal_mask', 'decoder_causal_mask']
+            for key in keys_to_remove:
+                state_dict.pop(key, None)
             model.load_state_dict(state_dict)
         else:
             model = init_weights(model)
@@ -222,7 +227,7 @@ def custom_generator_init(self, model: Model, audio_tokenizer: torch.nn.Module, 
     self._watermarker = watermarker
 
 
-def generate_audio(model, audio_tokenizer, text_tokenizer, watermarker, text, speaker_id, device, use_amp=True, max_audio_length_ms=10_000):
+def generate_audio(model, audio_tokenizer, text_tokenizer, watermarker, text, speaker_id, device, use_amp=True, max_audio_length_ms=90_000):
     """Generate audio from text."""
     model.eval()
     Generator.__init__ = types.MethodType(custom_generator_init, Generator)
