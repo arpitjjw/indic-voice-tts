@@ -12,6 +12,12 @@ Based on [knottwill/sesame-finetune](https://github.com/knottwill/sesame-finetun
 - **Hyperparameter Optimization**: Optuna sweeps with multi-GPU support
 - **Data Utilities**: Audio preprocessing, dataset inspection tools
 
+## Requirements
+
+- Python 3.10
+- CUDA-capable GPU
+- `ffmpeg` (required for audio conversion in prepare_data.py)
+
 ## Installation
 
 1. **Setup virtual environment:**
@@ -37,13 +43,47 @@ cp .env.example .env
 
 ### 1. Data Preparation
 
-**From transcript JSON + audio file:**
+**Option A: From transcript JSON + audio file:**
+
+First, create a transcript JSON with this format:
+```json
+{
+  "speaker": "Speaker Name",
+  "total_segments": 100,
+  "segments": [
+    {
+      "text": "Your transcription here",
+      "start_ms": 1000,
+      "end_ms": 5200
+    }
+  ]
+}
+```
+
+Then convert to training format:
 ```bash
 python prepare_data.py \
   --transcript_json data.json \
   --audio_file audio.mp3 \
   --output_dir ./prepared_data \
   --speaker_id 3
+```
+
+This creates `train.json` and `val.json` in the output directory.
+
+**Option B: Skip prepare_data.py if you already have the standard format:**
+
+Create `train.json` and `val.json` directly with entries like:
+```json
+[
+  {
+    "text": "Your transcription",
+    "path": "/path/to/audio.wav",
+    "start": 1.0,
+    "end": 5.2,
+    "speaker": 3
+  }
+]
 ```
 
 **Pre-tokenize for training:**
@@ -95,14 +135,15 @@ python sweep.py \
 
 ## Key Parameters
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `--batch_size` | Training batch size | 8 |
-| `--learning_rate` | Learning rate | 4e-5 |
-| `--lora_rank` | LoRA rank (lower = fewer params) | 16 |
-| `--use_amp` | Enable mixed precision | False |
-| `--partial_data_loading` | For large datasets | False |
-| `--omit_speaker_id` | Don't prepend speaker ID to text | False |
+| Parameter | Description | Default (train.py) | Default (train_lora.py) |
+|-----------|-------------|---------|---------|
+| `--batch_size` | Training batch size | 8 | 1 |
+| `--learning_rate` | Learning rate | 4e-5 | 1e-4 |
+| `--lora_rank` | LoRA rank (lower = fewer params) | N/A | 16 |
+| `--use_amp` | Enable mixed precision | False | True |
+| `--partial_data_loading` | For large datasets | False | N/A |
+| `--load_in_memory` | Load full dataset in memory | False | False |
+| `--omit_speaker_id` | Don't prepend speaker ID to text | False | N/A |
 
 ## Utilities
 
@@ -110,17 +151,9 @@ python sweep.py \
 - `view_original_data.py` - View original JSON data before tokenization
 - `pretrim_audio_fast.py` - Audio trimming utility
 
-## Data Format
+## Notes
 
-Your metadata JSON should contain entries with:
-```json
-{
-  "text": "Transcription text here",
-  "path": "/path/to/audio.wav",
-  "start": 0.0,
-  "end": 5.2,
-  "speaker": 3
-}
-```
-
-Supported formats: `.json`, `.csv`, `.parquet`, `.sql`
+- Audio files must be `.wav` format for pretokenize.py (use prepare_data.py to convert from mp3)
+- Supported metadata formats for pretokenize.py: `.json`, `.csv`, `.parquet`, `.sql`
+- Model supports up to 90 seconds of audio per segment
+- Speaker IDs are prepended to text as `[speaker_id]` unless `--omit_speaker_id` is used
